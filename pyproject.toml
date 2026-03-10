@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pm-handbook"
+version = "0.1.0"
+description = "Practical PM playbooks, templates, and repeatable execution systems."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+pm-handbook-new-case = "tools.new_case_study:main"
+
+[tool.setuptools]
+py-modules = []
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["."]
