@@ -13,6 +13,7 @@ This repo is built for technical PMs who want reusable systems instead of blank-
 - `templates/launch-readiness-template.md`
 - `templates/stakeholder-update-template.md`
 - `templates/postmortem-template.md`
+- `templates/prioritization-scorecard-template.md`
 
 ### Playbooks
 - `playbooks/weekly-operating-rhythm.md`
@@ -22,6 +23,10 @@ This repo is built for technical PMs who want reusable systems instead of blank-
 ### Case studies
 - `case-studies/examples/` includes sanitized examples
 - `tools/new_case_study.py` generates new case studies from a repeatable structure
+
+### Prioritization workflows
+- `templates/prioritization-scorecard-template.md` gives a lightweight scoring rubric
+- `tools/prioritize_features.py` ranks candidate features from CSV into a decision-ready markdown backlog
 
 ## Why this exists
 
@@ -39,6 +44,10 @@ python tools/new_case_study.py \
   --title "Agent Reliability Rollout" \
   --problem "Support escalations were rising due to inconsistent AI responses" \
   --outcome "Escalations dropped by 31% in six weeks"
+
+python tools/prioritize_features.py \
+  --input path/to/features.csv \
+  --output templates/generated/prioritized-backlog.md
 ```
 
 ## Usage pattern

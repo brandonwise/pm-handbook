@@ -12,6 +12,7 @@ dependencies = []
 
 [project.scripts]
 pm-handbook-new-case = "tools.new_case_study:main"
+pm-handbook-prioritize = "tools.prioritize_features:main"
 
 [tool.setuptools]
 py-modules = []
