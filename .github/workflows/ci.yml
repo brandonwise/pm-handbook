@@ -24,3 +24,16 @@ jobs:
             --title "Incident Triage Copilot" \
             --problem "Escalation queue was bottlenecked" \
             --outcome "Mean time to triage dropped 24%"
+
+      - name: Smoke test feature prioritizer
+        run: |
+          cat > /tmp/features.csv << 'CSV'
+          feature,reach,impact,confidence,strategic_fit,effort
+          Slack escalation digest,4,5,4,5,2
+          Bulk policy editor,3,4,3,4,4
+          CSV
+
+          python tools/prioritize_features.py \
+            --input /tmp/features.csv \
+            --output /tmp/prioritized-backlog.md
+          test -f /tmp/prioritized-backlog.md
