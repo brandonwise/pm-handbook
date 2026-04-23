@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 REQUIRED_COLUMNS = {"feature", "reach", "impact", "confidence", "effort", "strategic_fit"}
 SCORE_DIMENSIONS = ("reach", "impact", "confidence", "strategic_fit")
@@ -145,10 +145,46 @@ def rank_features(rows: List[Dict[str, str]], weights: Optional[Dict[str, float]
     return ranked
 
 
+def filter_features(
+    rows: List[Dict[str, str]],
+    min_confidence: float = 0.0,
+    min_strategic_fit: float = 0.0,
+) -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
+    included: List[Dict[str, str]] = []
+    excluded: List[Dict[str, str]] = []
+
+    for row in rows:
+        confidence = _to_float(row, "confidence")
+        strategic_fit = _to_float(row, "strategic_fit")
+
+        reasons: List[str] = []
+        if confidence < min_confidence:
+            reasons.append(f"confidence {confidence:g} < min {min_confidence:g}")
+        if strategic_fit < min_strategic_fit:
+            reasons.append(f"strategic_fit {strategic_fit:g} < min {min_strategic_fit:g}")
+
+        if reasons:
+            copy = dict(row)
+            copy["exclusion_reason"] = "; ".join(reasons)
+            excluded.append(copy)
+            continue
+
+        included.append(dict(row))
+
+    if not included:
+        raise ValueError(
+            "All features were excluded by hard constraints. "
+            "Lower --min-confidence or --min-strategic-fit thresholds."
+        )
+
+    return included, excluded
+
+
 def render_markdown(
     ranked: List[Dict[str, str]],
     top: Optional[int] = None,
     weights: Optional[Dict[str, float]] = None,
+    excluded: Optional[List[Dict[str, str]]] = None,
 ) -> str:
     active_weights = _validate_weights(weights) if weights is not None else DEFAULT_WEIGHTS
     limited = ranked[:top] if top else ranked
@@ -175,6 +211,26 @@ def render_markdown(
             )
         )
 
+    if excluded:
+        lines.extend(
+            [
+                "",
+                "## Excluded by hard constraints",
+                "",
+                "| Feature | Confidence | Strategic Fit | Reason |",
+                "|---|---:|---:|---|",
+            ]
+        )
+        for row in excluded:
+            lines.append(
+                "| {feature} | {confidence} | {strategic_fit} | {reason} |".format(
+                    feature=row.get("feature", "").replace("|", "\\|"),
+                    confidence=row.get("confidence", ""),
+                    strategic_fit=row.get("strategic_fit", ""),
+                    reason=row.get("exclusion_reason", "").replace("|", "\\|"),
+                )
+            )
+
     return "\n".join(lines) + "\n"
 
 
@@ -183,12 +239,22 @@ def create_prioritized_backlog(
     output_file: Path,
     top: Optional[int] = None,
     weights: Optional[Dict[str, float]] = None,
+    min_confidence: float = 0.0,
+    min_strategic_fit: float = 0.0,
 ) -> Path:
     rows = load_features(input_csv)
     active_weights = _validate_weights(weights) if weights is not None else DEFAULT_WEIGHTS
-    ranked = rank_features(rows, weights=active_weights)
+    included, excluded = filter_features(
+        rows,
+        min_confidence=min_confidence,
+        min_strategic_fit=min_strategic_fit,
+    )
+    ranked = rank_features(included, weights=active_weights)
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    output_file.write_text(render_markdown(ranked, top=top, weights=active_weights), encoding="utf-8")
+    output_file.write_text(
+        render_markdown(ranked, top=top, weights=active_weights, excluded=excluded),
+        encoding="utf-8",
+    )
     return output_file
 
 
@@ -216,12 +282,31 @@ def build_parser() -> argparse.ArgumentParser:
             "for reach,impact,confidence,strategic_fit (must sum to 1.0)."
         ),
     )
+    parser.add_argument(
+        "--min-confidence",
+        type=float,
+        default=0.0,
+        help="Hard constraint: exclude rows with confidence below this threshold (0-5).",
+    )
+    parser.add_argument(
+        "--min-strategic-fit",
+        type=float,
+        default=0.0,
+        help="Hard constraint: exclude rows with strategic_fit below this threshold (0-5).",
+    )
     return parser
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    for label, value in (
+        ("--min-confidence", args.min_confidence),
+        ("--min-strategic-fit", args.min_strategic_fit),
+    ):
+        if value < 0 or value > 5:
+            parser.error(f"{label} must be between 0 and 5.")
 
     weights = parse_weights(args.weights)
 
@@ -230,6 +315,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         output_file=Path(args.output),
         top=args.top,
         weights=weights,
+        min_confidence=args.min_confidence,
+        min_strategic_fit=args.min_strategic_fit,
     )
     print(f"Created: {output_path}")
     return 0
