@@ -48,7 +48,16 @@ python tools/new_case_study.py \
 python tools/prioritize_features.py \
   --input path/to/features.csv \
   --output templates/generated/prioritized-backlog.md
+
+# Optional hard constraints to avoid low-confidence roadmap noise
+python tools/prioritize_features.py \
+  --input path/to/features.csv \
+  --min-confidence 3.0 \
+  --min-strategic-fit 3.0
 ```
+
+The prioritizer now supports hard constraints (`--min-confidence`, `--min-strategic-fit`) and writes an
+"Excluded by hard constraints" section in the markdown output so tradeoffs stay visible.
 
 ## Usage pattern
 
