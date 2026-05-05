@@ -4,13 +4,20 @@ import argparse
 import csv
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple, TypedDict
 
 REQUIRED_COLUMNS = {"scenario", "stage", "metric", "threshold", "owner"}
 STAGE_ORDER: Sequence[str] = ("offline", "shadow", "launch")
 DEFAULT_DECISION_RULE = (
     "Launch only if every critical scenario meets threshold and no red-line failure mode is unresolved."
 )
+
+
+class StageSummary(TypedDict):
+    stage: str
+    count: int
+    critical: int
+    owners: Set[str]
 
 
 def _clean_row(row: Dict[str, str]) -> Dict[str, str]:
@@ -56,7 +63,7 @@ def load_eval_rows(path: Path) -> List[Dict[str, str]]:
 
 
 def summarize_stages(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
-    grouped: Dict[str, Dict[str, object]] = {}
+    grouped: Dict[str, StageSummary] = {}
 
     for row in rows:
         stage = row.get("stage", "")
@@ -70,29 +77,25 @@ def summarize_stages(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
             }
 
         summary = grouped[key]
-        summary["count"] = int(summary["count"]) + 1
+        summary["count"] += 1
 
         severity = row.get("severity", "").strip().lower()
         if severity == "critical":
-            summary["critical"] = int(summary["critical"]) + 1
+            summary["critical"] += 1
 
         owner = row.get("owner", "")
         if owner:
-            owners = summary["owners"]
-            assert isinstance(owners, set)
-            owners.add(owner)
+            summary["owners"].add(owner)
 
     ordered: List[Dict[str, str]] = []
     for key in sorted(grouped.keys(), key=_stage_sort_key):
         summary = grouped[key]
-        owners = summary["owners"]
-        assert isinstance(owners, set)
         ordered.append(
             {
-                "stage": str(summary["stage"]),
+                "stage": summary["stage"],
                 "count": str(summary["count"]),
                 "critical": str(summary["critical"]),
-                "owners": ", ".join(sorted(owners)),
+                "owners": ", ".join(sorted(summary["owners"])),
             }
         )
 
