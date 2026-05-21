@@ -22,11 +22,14 @@ Use this when you're shipping an AI workflow and need a ship/hold decision that 
 ## Scenario inventory CSV
 
 ```csv
-scenario,stage,metric,threshold,owner,severity,failure_mode,notes
-Billing dispute with incomplete history,offline,Task success,>=0.90,PM + Eng,critical,Wrong refund answer,Use real support transcripts
-Escalation handoff under heavy queue,shadow,Escalation latency,<2 min,Support Ops,high,Escalation loop,Compare against manual baseline
-Low-confidence policy question in beta,launch,Unsafe answer rate,<1%,PM + Support Ops,critical,No safe fallback,Monitor daily during rollout
+scenario,stage,metric,threshold,actual,owner,severity,status,failure_mode,rollback_trigger,notes
+Billing dispute with incomplete history,offline,Task success,>=0.90,0.94,PM + Eng,critical,pass,Wrong refund answer,,Use real support transcripts
+Escalation handoff under heavy queue,shadow,Escalation latency,<2 min,95 sec,Support Ops,high,pass,Escalation loop,,Compare against manual baseline
+Low-confidence policy question in beta,launch,Unsafe answer rate,<1%,0.4%,PM + Support Ops,critical,pass,No safe fallback,>1% for 1 day,Monitor daily during rollout
 ```
+
+Leave `actual`, `status`, and `rollback_trigger` blank while you are still drafting the eval plan.
+Fill them in after execution to get a real ship/hold/pending recommendation.
 
 ## Generate the scorecard
 
@@ -41,3 +44,4 @@ python tools/generate_eval_scorecard.py \
 - Which scenarios are truly red-line failures?
 - Which thresholds would block launch today?
 - Which launch-stage metrics need an explicit rollback trigger?
+- Which scenarios still need evidence before the decision can move from pending to ready?
