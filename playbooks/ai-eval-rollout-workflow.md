@@ -5,8 +5,9 @@
 3. Capture 10-20 real scenarios from support tickets, user sessions, and internal edge cases.
 4. Define one metric and one threshold per scenario.
 5. Tag each scenario by stage: offline, shadow, or launch.
-6. Generate the scorecard and review it with engineering and ops.
-7. Hold the launch if any critical scenario misses threshold or lacks an owner.
+6. Run the evals, then record actual results, status, and rollback triggers in the CSV.
+7. Generate the scorecard and review it with engineering and ops.
+8. Hold the launch if the scorecard stays `HOLD` or `PENDING`.
 
 ## Guardrails
 - No launch on vibes alone.
@@ -18,3 +19,4 @@
 - 3 offline scenarios that represent the main user job
 - 1 adversarial or abuse case for each critical flow
 - 1 launch-stage guardrail metric tied to customer risk
+- 1 explicit rollback trigger for each launch-stage scenario

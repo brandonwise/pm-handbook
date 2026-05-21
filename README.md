@@ -32,7 +32,7 @@ This repo is built for technical PMs who want reusable systems instead of blank-
 
 ### AI eval workflows
 - `templates/ai-eval-scorecard-template.md` helps PMs define scenarios, thresholds, and launch guardrails
-- `tools/generate_eval_scorecard.py` turns a simple CSV into a decision-ready eval scorecard for AI products
+- `tools/generate_eval_scorecard.py` turns a simple CSV into a ship/hold/pending eval readout for AI products
 
 ## Why this exists
 
@@ -70,8 +70,11 @@ python tools/generate_eval_scorecard.py \
 The prioritizer now supports hard constraints (`--min-confidence`, `--min-strategic-fit`) and writes an
 "Excluded by hard constraints" section in the markdown output so tradeoffs stay visible.
 
+Once you start running the evals, add `actual`, `status` (`pass`, `fail`, `blocked`, or `not-run`),
+and `rollback_trigger` columns to turn the scorecard into a real launch recommendation instead of a planning doc.
+
 The eval scorecard generator gives PMs a lightweight way to review offline, shadow, and launch-stage AI quality
-in one place with an explicit ship/hold rule.
+in one place with an explicit ship/hold rule, live execution evidence, and rollback expectations.
 
 ## Usage pattern
 
